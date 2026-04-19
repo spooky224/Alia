@@ -1,0 +1,37 @@
+# ======================
+# Common
+# ======================
+.env
+.env.*
+.DS_Store
+*.log
+
+# ======================
+# Frontend (React)
+# ======================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# ======================
+# Backend (Python)
+# ======================
+backend/__pycache__/
+backend/*.pyc
+backend/venv/
+backend/.venv/
+backend/.mypy_cache/
+
+# ======================
+# Media / Generated
+# ======================
+*.wav
+*.mp3
+intro/*.wav
+intro/*.json
+
+# ======================
+# OS / Editor
+# ======================
+.vscode/
+.idea/

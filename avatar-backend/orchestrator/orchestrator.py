@@ -1,38 +1,32 @@
 # orchestrator/orchestrator.py
 
-import re
 from presentation_agent.builder import build_presentation
+from presentation_agent.product_resolver import resolve_product
 
 
 # =================================================
-# INTENT HANDLERS
+# INTENT DETECTION
 # =================================================
-def detect_presentation_intent(text: str) -> str | None:
+def detect_intent(text: str) -> str:
     """
-    Detect if the user is asking for a product presentation.
-    Returns normalized product id or None.
+    Detect high-level user intent.
     """
-    text = text.lower().strip()
+    text = text.lower()
 
-    keywords = [
+    presentation_triggers = [
         "presentation",
         "present",
-        "show me",
+        "show",
         "introduce",
         "explain",
+        "overview",
+        "talk about",
     ]
 
-    if not any(k in text for k in keywords):
-        return None
+    if any(trigger in text for trigger in presentation_triggers):
+        return "presentation"
 
-    match = re.search(r"for\s+(.+)", text)
-    if not match:
-        return None
-
-    product = match.group(1).strip()
-    product_id = product.replace(" ", "_").replace("-", "_")
-
-    return product_id
+    return "speech"
 
 
 # =================================================
@@ -41,24 +35,51 @@ def detect_presentation_intent(text: str) -> str | None:
 def handle_message(message: str) -> dict:
     """
     Central decision-making unit.
+    Responsible for:
+    - intent detection
+    - product resolution
+    - orchestration choice
     """
+
     if not message or not message.strip():
         return {
             "mode": "speech",
             "speech_text": "I didn't catch that. Could you please repeat?"
         }
 
+    # Normalize once
+    message_clean = message.strip()
+
+    # -------------------------
+    # Detect intent + product
+    # -------------------------
+    intent = detect_intent(message_clean)
+    product_id = resolve_product(message_clean)
+
     # -------------------------
     # Presentation intent
     # -------------------------
-    product_id = detect_presentation_intent(message)
-    if product_id:
+    if intent == "presentation" and product_id:
         presentation = build_presentation(product_id)
 
         return {
             "mode": "presentation",
+            "product": product_id,
+            "category": presentation["category"],
             "speech_text": presentation["speech_text"],
             "timeline": presentation["timeline"],
+        }
+
+    # -------------------------
+    # Presentation requested but product unknown
+    # -------------------------
+    if intent == "presentation" and not product_id:
+        return {
+            "mode": "speech",
+            "speech_text": (
+                "I understand you want a presentation, "
+                "but I couldn't identify the product."
+            )
         }
 
     # -------------------------
@@ -66,5 +87,5 @@ def handle_message(message: str) -> dict:
     # -------------------------
     return {
         "mode": "speech",
-        "speech_text": message
+        "speech_text": message_clean
     }

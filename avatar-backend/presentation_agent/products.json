@@ -1,0 +1,27 @@
+{
+    "bactol_savon_professionnel": {
+      "display_name": "Bactol Savon Professionnel",
+      "category": "bactol",
+      "aliases": [
+        "bactol savon professionnel",
+        "bactol professional soap",
+        "bactol soap",
+        "savon bactol"
+      ]
+    },
+    
+    "gel_desinfectant_bactol": {
+      "display_name": "Gel Désinfectant Bactol",
+      "category": "bactol",
+      "aliases": [
+        "gel bactol",
+        "gel desinfectant bactol",
+        "bactol gel",
+        "bactol disinfectant gel",
+        "gel hydroalcoolique bactol",
+        "bactol hand gel"
+      ]
+    }
+}
+    
+

@@ -1,0 +1,24 @@
+{
+  "name": "Gel Désinfectant Bactol",
+
+  "indications": [
+    "Désinfection hygiénique des mains",
+    "Alternative au lavage des mains en l'absence d'eau"
+  ],
+
+  "composition": [
+    "Chlorure de benzalkonium à 0,2 %",
+    "Alcool à 70 %"
+  ],
+
+  "age_and_population": [
+    "Adultes",
+    "Professionnels de santé"
+  ],
+
+  "utilisation": [
+    "Appliquer une petite quantité sur les mains propres et sèches",
+    "Frotter soigneusement jusqu'à évaporation complète",
+    "Ne pas rincer"
+  ]
+}

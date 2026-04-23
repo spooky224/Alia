@@ -9,6 +9,7 @@ import json
 import threading
 import subprocess
 from lipSync.viseme_map import PHONEME_TO_VISEME, get_curve_weights
+import sys
 
 from gtts import gTTS
 from pydub import AudioSegment
@@ -129,7 +130,7 @@ def speak(data: TextMessage):
     generate_wav(data.message)
 
     log("Launching lipSync preprocessing")
-    subprocess.Popen(["python3", LIPSYNC_SCRIPT])
+    subprocess.Popen([sys.executable, LIPSYNC_SCRIPT])
 
     log("Waiting for lipSync READY signal")
     while not os.path.exists(READY_SIGNAL):

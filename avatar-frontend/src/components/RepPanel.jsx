@@ -1,26 +1,65 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function RepPanel({
   setSlides,
   setActiveSlide,
+  setCategory,
+  setProduct,
   disabled = false,
 }) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // ✅ Chat history
+  const [messages, setMessages] = useState([]);
+  const chatEndRef = useRef(null);
+
+  // ✅ Auto-scroll chat
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   const handleSend = async () => {
     if (disabled || !text.trim() || loading) return;
     setLoading(true);
+
+    const userText = text.trim();
+
+    // ✅ 1️⃣ Add USER message immediately
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        role: "user",
+        text: userText,
+      },
+    ]);
 
     try {
       const res = await fetch("http://localhost:8000/process_message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: userText }),
       });
 
       const data = await res.json();
+
+      // ✅ 2️⃣ Save product/category (unchanged logic)
+      if (data.mode === "presentation") {
+        setCategory(data.category);
+        setProduct(data.product);
+      }
+
       const presentationSlides = data.timeline || [];
+
+      
+      const assistantMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        text: data.speech_text}
+
+       
+      
 
       const audioRes = await fetch("http://localhost:8000/speak", {
         method: "POST",
@@ -33,20 +72,21 @@ export default function RepPanel({
       const blob = await audioRes.blob();
       const audio = new Audio(URL.createObjectURL(blob));
 
-      // ✅ Presentation starts
+      // ✅ Presentation starts → slides + lipsync
       audio.onplaying = async () => {
-        console.log("[Presentation] started");
         await fetch("http://localhost:8000/start_lipsync", {
           method: "POST",
         });
+
+        setMessages(prev => [...prev, assistantMessage]);
+
         setSlides(presentationSlides);
         setActiveSlide(0);
       };
 
-      // ✅ Slide timing driven by audio
+      // ✅ Slide timing (unchanged)
       audio.ontimeupdate = () => {
         if (!presentationSlides.length) return;
-
         for (let i = presentationSlides.length - 1; i >= 0; i--) {
           if (audio.currentTime >= presentationSlides[i].start) {
             setActiveSlide(i);
@@ -55,12 +95,12 @@ export default function RepPanel({
         }
       };
 
-      // ✅ Presentation ended → CLEAR SLIDES
+      // ✅ End cleanup (unchanged)
       audio.onended = () => {
-        console.log("[Presentation] ended → clearing slides");
-
-        setSlides([]);       // ✅ removes all slides
-        setActiveSlide(0);   // ✅ reset index
+        setSlides([]);
+        setActiveSlide(0);
+        setCategory(null);
+        setProduct(null);
       };
 
       audio.play();
@@ -75,8 +115,11 @@ export default function RepPanel({
   return (
     <div
       style={{
-        width: 320,
+        width: "min(480px, 92vw)",
+        height: "70vh",
         padding: "16px 18px",
+        display: "flex",
+        flexDirection: "column",
         backdropFilter: "blur(14px)",
         background:
           "linear-gradient(180deg, rgba(28,36,24,0.82), rgba(18,24,16,0.88))",
@@ -91,18 +134,43 @@ export default function RepPanel({
         transition: "opacity 200ms ease-out",
       }}
     >
+      {/* ✅ CHAT AREA */}
       <div
         style={{
-          fontSize: 12,
-          textTransform: "uppercase",
-          letterSpacing: "0.12em",
-          opacity: 0.7,
-          marginBottom: 10,
+          flex: 1,
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+          paddingRight: 6,
+          marginBottom: 12,
         }}
       >
-        Presenter Input
+        {messages.map((m) => (
+          <div
+            key={m.id}
+            style={{
+              alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+              maxWidth: "85%",
+              padding: "10px 14px",
+              borderRadius: 14,
+              background:
+                m.role === "user"
+                  ? "linear-gradient(180deg, #6f8f5f, #5a784b)"
+                  : "linear-gradient(180deg, #1f2a1b, #161e14)",
+              color: "#EAF2E6",
+              fontSize: 14,
+              lineHeight: 1.45,
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {m.text}
+          </div>
+        ))}
+        <div ref={chatEndRef} />
       </div>
 
+      {/* ✅ INPUT */}
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -110,11 +178,11 @@ export default function RepPanel({
         placeholder={
           disabled
             ? "Waiting for introduction…"
-            : "Type the message to present…"
+            : "Type your message…"
         }
         style={{
           width: "100%",
-          minHeight: 80,
+          minHeight: 70,
           resize: "none",
           background: "rgba(0,0,0,0.35)",
           color: "#F3F7F1",
@@ -132,7 +200,7 @@ export default function RepPanel({
         onClick={handleSend}
         disabled={disabled || loading}
         style={{
-          marginTop: 12,
+          marginTop: 10,
           width: "100%",
           height: 40,
           borderRadius: 10,

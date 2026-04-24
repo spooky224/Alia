@@ -24,9 +24,11 @@ WAV_PATH = os.path.expanduser("~/UnrealSpeech/LiveSpeech.wav")
 
 READY_SIGNAL = "/tmp/lipsync_ready"
 START_SIGNAL = "/tmp/lipsync_start"
+INTERRUPT_SIGNAL = "/tmp/lipsync_interrupt"
 
 def log(msg):
     print(f"[lipSync] {msg}", flush=True)
+
 
 # ==========================
 # RESET HELPERS
@@ -121,9 +123,10 @@ def extract_timed_visemes(wav):
 # ==========================
 if __name__ == "__main__":
     # cleanup flags
-    for f in (READY_SIGNAL, START_SIGNAL):
+    for f in (READY_SIGNAL, START_SIGNAL, INTERRUPT_SIGNAL):
         if os.path.exists(f):
             os.remove(f)
+
 
     log("Starting heavy lip-sync preprocessing")
     visemes = extract_timed_visemes(WAV_PATH)
@@ -145,6 +148,14 @@ if __name__ == "__main__":
     t0 = time.time()
 
     while True:
+        
+        # 🚨 INTERRUPTION CHECK (NEW)
+        if os.path.exists(INTERRUPT_SIGNAL):
+            log("🚨 INTERRUPTED — aborting lipSync immediately")
+            osc_client.send_message(OSC_STOP_ROUTE, 0)
+            reset_face_to_neutral()
+            break
+
         now = time.time() - t0
         active = next((v for v in visemes if v["start"] <= now < v["end"]), None)
 

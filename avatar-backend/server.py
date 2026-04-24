@@ -2,7 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-
+from fastapi import UploadFile, File
+import tempfile
+import soundfile as sf
+from faster_whisper import WhisperModel
 import os
 import time
 import json
@@ -40,11 +43,28 @@ LIPSYNC_SCRIPT = os.path.abspath("lipSync/lipSync.py")
 INTRO_VISEMES_PATH = os.path.abspath("intro/intro_visemes.json")
 INTRO_AUDIO_PATH = os.path.abspath("intro/intro.wav")
 
+
+
+OBJECTION_VISEMES_PATH = os.path.abspath("objection/objection_visemes.json")
+OBJECTION_AUDIO_PATH = os.path.abspath("objection/objection.wav")
+
+OBJECTION_IN_PROGRESS = False
+OBJECTION_LOCK = threading.Lock()
+
+
 READY_SIGNAL = "/tmp/lipsync_ready"
 START_SIGNAL = "/tmp/lipsync_start"
+INTERRUPT_SIGNAL = "/tmp/lipsync_interrupt"
 
 BASE_PRESENTATIONS_DIR = os.path.abspath(
     "presentation_agent/presentations"
+)
+
+
+WHISPER_MODEL = WhisperModel(
+    "base",
+    device="cpu",
+    compute_type="int8"
 )
 
 OSC_IP = "127.0.0.1"
@@ -110,6 +130,39 @@ def generate_wav(text: str):
 
     audio.export(AUDIO_PATH, format="wav")
     os.remove(tmp_mp3)
+
+
+
+def play_objection_visemes():
+    log("▶ Playing cached objection visemes")
+
+    if not os.path.exists(OBJECTION_VISEMES_PATH):
+        log("❌ objection_visemes.json not found")
+        return
+
+    with open(OBJECTION_VISEMES_PATH, "r") as f:
+        visemes = json.load(f)
+
+    t0 = time.time()
+
+    while True:
+        now = time.time() - t0
+        active = next(
+            (v for v in visemes if v["start"] <= now < v["end"]), None
+        )
+
+        if active:
+            osc_client.send_message(OSC_START_ROUTE, 0)
+            for curve, value in active["curves"].items():
+                osc_client.send_message("/curve", [curve, float(value)])
+
+        if now > visemes[-1]["end"]:
+            osc_client.send_message(OSC_STOP_ROUTE, 0)
+            log("✅ Objection lipsync finished")
+            reset_face_to_neutral()
+            break
+
+        time.sleep(0.02)
 
 
 # =================================================
@@ -221,3 +274,74 @@ def get_slide(category: str, product: str, filename: str):
         return {"error": "Slide not found"}
 
     return FileResponse(slide_path, media_type="image/png")
+
+# =================================================
+# ✅ SPEECH TO TEXT (MIC INPUT)
+# =================================================
+@app.post("/transcribe")
+async def transcribe(audio: UploadFile = File(...)):
+    log("🎙 Received audio for transcription")
+
+    # Save uploaded webm
+    with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as tmp:
+        tmp.write(await audio.read())
+        webm_path = tmp.name
+
+    # Convert WebM → WAV (16k mono for Whisper)
+    wav_path = webm_path.replace(".webm", ".wav")
+    sound = AudioSegment.from_file(webm_path, format="webm")
+    sound = sound.set_frame_rate(16000).set_channels(1)
+    sound.export(wav_path, format="wav")
+
+    # Transcribe with whisper
+    segments, info = WHISPER_MODEL.transcribe(wav_path)
+
+    text = " ".join(segment.text for segment in segments).strip()
+
+    log(f"✅ Transcribed text: {text}")
+
+    return { "text": text }
+
+
+@app.post("/interrupt")
+def interrupt():
+    global OBJECTION_IN_PROGRESS
+
+    with OBJECTION_LOCK:
+        if OBJECTION_IN_PROGRESS:
+            log("⚠️ Objection already in progress — ignoring duplicate interrupt")
+            return {"status": "already_interrupted"}
+
+        OBJECTION_IN_PROGRESS = True
+
+    log("🚨 INTERRUPTION RECEIVED")
+
+    # Abort any running dynamic lipSync
+    open(INTERRUPT_SIGNAL, "w").close()
+    osc_client.send_message(OSC_STOP_ROUTE, 0)
+    reset_face_to_neutral()
+    cleanup_flags()
+
+    # Play objection lipsync (cached)
+    def run_objection():
+        try:
+            play_objection_visemes()
+        finally:
+            # ✅ ALWAYS release guard
+            global OBJECTION_IN_PROGRESS
+            OBJECTION_IN_PROGRESS = False
+
+    threading.Thread(
+        target=run_objection,
+        daemon=True,
+    ).start()
+
+    return {"status": "interrupted"}
+
+
+@app.get("/objection/{filename}")
+def get_static_audio(filename: str):
+    return FileResponse(
+        os.path.join("objection", filename),
+        media_type="audio/wav"
+    )

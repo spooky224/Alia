@@ -50,9 +50,7 @@ export default function Rep() {
     setTimeout(async () => {
       try {
         const audio = new Audio("http://localhost:8000/intro/intro.wav");
-
         audio.onended = () => setIntroDone(true);
-
         await audio.play();
         await fetch("http://localhost:8000/intro/play", { method: "POST" });
       } catch {
@@ -62,7 +60,7 @@ export default function Rep() {
   };
 
   // =========================================================
-  // ✅ FINAL PRODUCTION LAYOUT
+  // ✅ FINAL POLISHED LAYOUT
   // =========================================================
   return (
     <div
@@ -70,12 +68,13 @@ export default function Rep() {
         display: "flex",
         width: "100%",
         height: "98vh",
-        background: "#0b0f0a",
         overflow: "hidden",
+        background:
+          "linear-gradient(180deg, #050505 0%, #000 30%, #000 70%, #050505 100%)",
       }}
     >
       {/* ================================================= */}
-      {/* ✅ LEFT — UNREAL STAGE                            */}
+      {/* ✅ LEFT — STREAM STAGE (16:9 CONTAINMENT)          */}
       {/* ================================================= */}
       <div
         style={{
@@ -83,20 +82,16 @@ export default function Rep() {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          background:
-            "radial-gradient(circle at center, #202b1f 0%, #0b0f0a 72%)",
           overflow: "hidden",
         }}
       >
-        {/* ✅ Aspect‑controlled stage */}
         <div
           style={{
             width: "100%",
-            height: "100%",
             maxWidth: "calc(100vh * 16 / 9)",
-            maxHeight: "100%",
             aspectRatio: "16 / 9",
             position: "relative",
+            background: "#000",
           }}
         >
           <PixelStream onStreamReady={handleStreamReady} />
@@ -108,13 +103,13 @@ export default function Rep() {
               alt="TV Slide"
               style={{
                 position: "absolute",
-                right: "7%",
-                top: "28%",
-                width: "28%",
+                right: "1%",
+                top: "21.1%",
+                width: "37.8%",
+                height: "37%",
                 maxWidth: 520,
                 aspectRatio: "16 / 9",
                 objectFit: "cover",
-                borderRadius: 12,
                 boxShadow: "0 12px 32px rgba(0,0,0,0.35)",
                 opacity: isTransitioning ? 0 : 1,
                 transform: isTransitioning
@@ -131,19 +126,19 @@ export default function Rep() {
       </div>
 
       {/* ================================================= */}
-      {/* ✅ RIGHT — CHAT CONSOLE                           */}
+      {/* ✅ RIGHT — CHAT CONSOLE (HARMONIZED)               */}
       {/* ================================================= */}
       <div
         style={{
           width: 480,
           minWidth: 420,
           height: "100%",
-          background:
-            "linear-gradient(180deg, #121914 0%, #0b0f0a 100%)",
-          borderLeft: "1px solid rgba(255,255,255,0.06)",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
+          padding: "80px 16px 16px 16px",
+          background:
+            "linear-gradient(180deg, #050505 0%, #000 40%, #000 100%)",
         }}
       >
         <RepPanel

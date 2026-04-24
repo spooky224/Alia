@@ -36,29 +36,7 @@ export default function PixelStream({ onStreamReady }) {
         } else {
           console.log("[PixelStream] iframeDoc available — injecting overlay disabler");
 
-          const script = iframeDoc.createElement("script");
-          script.innerHTML = `
-            console.log("[Iframe] overlay-disabler injected");
-
-            (function () {
-              const tryDisable = () => {
-                const playOverlay = document.getElementById("playOverlay");
-                const playBtn = document.getElementById("playButtonOverlay");
-                const video = document.getElementById("streamingVideo");
-
-                if (video) {
-                  video.muted = true;
-                  video.play().catch(() => {});
-                }
-                if (playOverlay) playOverlay.style.display = "none";
-                if (playBtn) playBtn.style.display = "none";
-              };
-
-              tryDisable();
-              setInterval(tryDisable, 500);
-            })();
-          `;
-          iframeDoc.body.appendChild(script);
+          
         }
       } catch (err) {
         console.warn(

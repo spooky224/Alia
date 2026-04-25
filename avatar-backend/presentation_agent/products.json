@@ -1,27 +1,42 @@
 {
-    "bactol_savon_professionnel": {
-      "display_name": "Bactol Savon Professionnel",
-      "category": "bactol",
-      "aliases": [
-        "bactol savon professionnel",
-        "bactol professional soap",
-        "bactol soap",
-        "savon bactol"
-      ]
-    },
-    
-    "gel_desinfectant_bactol": {
-      "display_name": "Gel Désinfectant Bactol",
-      "category": "bactol",
-      "aliases": [
-        "gel bactol",
-        "gel desinfectant bactol",
-        "bactol gel",
-        "bactol disinfectant gel",
-        "gel hydroalcoolique bactol",
-        "bactol hand gel"
-      ]
-    }
+  "bactol_savon_professionnel": {
+    "display_name": "Bactol Savon Professionnel",
+    "category": "bactol",
+    "aliases": [
+      "bactol savon professionnel",
+      "bactol professional soap",
+      "bactol soap",
+      "savon bactol"
+    ]
+  },
+  "gel_desinfectant_bactol": {
+    "display_name": "Gel Désinfectant Bactol",
+    "category": "bactol",
+    "aliases": [
+      "gel bactol",
+      "gel desinfectant bactol",
+      "bactol gel",
+      "bactol disinfectant gel",
+      "gel hydroalcoolique bactol",
+      "bactol hand gel"
+    ]
+  },
+  "hydra_eau_micellaire_peau_normale_": {
+    "display_name": "Hydra Eau Micellaire Peau Normale ",
+    "category": "hydra",
+    "aliases": [
+      "hydra eau micellaire peau normale ",
+      "hydra eau micellaire peau normale ",
+      "hydra eau micellaire peau normale "
+    ]
+  },
+  "hydravera": {
+    "display_name": "HydraVera",
+    "category": "hydra",
+    "aliases": [
+      "hydravera",
+      "hydravera",
+      "hydravera"
+    ]
+  }
 }
-    
-
